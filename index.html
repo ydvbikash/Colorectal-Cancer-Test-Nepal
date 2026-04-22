@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CRC Awareness Chatbot — Nepal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --crimson: #c0392b;
+    --crimson-light: #e74c3c;
+    --crimson-dark: #922b21;
+    --gold: #d4a843;
+    --cream: #fdf6ec;
+    --deep: #1a0a0a;
+    --mid: #3d1c1c;
+    --soft: #f5e6d3;
+    --white: #ffffff;
+    --muted: #8b6f6f;
+    --green: #27ae60;
+    --chat-user: #922b21;
+    --chat-bot: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--deep);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(192,57,43,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(212,168,67,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, rgba(61,28,28,0.8) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    width: 100%;
+    max-width: 700px;
+    padding: 36px 24px 0;
+    position: relative;
+    z-index: 1;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+
+  .logo-ring {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--crimson), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    box-shadow: 0 0 24px rgba(192,57,43,0.5);
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem;
+    color: var(--cream);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .header h1 span {
+    color: var(--gold);
+  }
+
+  .header-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-left: 68px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .lang-toggle {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0 0 68px;
+  }
+
+  .lang-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .lang-btn.active {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: white;
+  }
+
+  .lang-btn:hover:not(.active) {
+    border-color: var(--crimson-light);
+    color: var(--cream);
+  }
+
+  /* Chat container */
+  .chat-wrap {
+    width: 100%;
+    max-width: 700px;
+    padding: 20px 24px 120px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .messages {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 300px;
+  }
+
+  /* Message bubbles */
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: bubbleIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    margin-top: 2px;
+  }
+
+  .avatar.bot {
+    background: linear-gradient(135deg, var(--crimson-dark), var(--crimson));
+    box-shadow: 0 2px 12px rgba(192,57,43,0.4);
+  }
+
+  .avatar.user-av {
+    background: linear-gradient(135deg, var(--gold), #c8953a);
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 13px 17px;
+    border-radius: 18px;
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+
+  .bubble.bot {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: var(--cream);
+    border-top-left-radius: 4px;
+    backdrop-filter: blur(10px);
+  }
+
+  .bubble.user-b {
+    background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+    color: white;
+    border-top-right-radius: 4px;
+    box-shadow: 0 4px 16px rgba(192,57,43,0.35);
+  }
+
+  .bubble .nepali {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    display: block;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.88rem;
+    color: rgba(253,246,236,0.75);
+    line-height: 1.7;
+  }
+
+  /* Options */
+  .options-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+    padding-left: 44px;
+    animation: fadeUp 0.4s ease 0.2s both;
+  }
+
+  .opt-btn {
+    padding: 9px 18px;
+    border-radius: 24px;
+    border: 1.5px solid rgba(192,57,43,0.5);
+    background: rgba(192,57,43,0.08);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.3;
+  }
+
+  .opt-btn:hover {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(192,57,43,0.3);
+  }
+
+  /* Risk result card */
+  .result-card {
+    margin: 8px 0 0 44px;
+    padding: 18px 20px;
+    border-radius: 16px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .result-card.low {
+    background: rgba(39,174,96,0.12);
+    border: 1.5px solid rgba(39,174,96,0.35);
+  }
+
+  .result-card.medium {
+    background: rgba(212,168,67,0.12);
+    border: 1.5px solid rgba(212,168,67,0.4);
+  }
+
+  .result-card.high {
+    background: rgba(192,57,43,0.15);
+    border: 1.5px solid rgba(192,57,43,0.45);
+  }
+
+  .result-card .risk-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  .result-card.low .risk-label { color: #2ecc71; }
+  .result-card.medium .risk-label { color: var(--gold); }
+  .result-card.high .risk-label { color: var(--crimson-light); }
+
+  .result-card p {
+    font-size: 0.87rem;
+    color: var(--cream);
+    opacity: 0.85;
+    line-height: 1.6;
+  }
+
+  .result-card .nepali-result {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 0.83rem;
+    color: rgba(253,246,236,0.65);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    line-height: 1.8;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex; gap: 10px; align-items: flex-end;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .typing-dots {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
+    border-top-left-radius: 4px;
+    padding: 14px 18px;
+    display: flex; gap: 5px; align-items: center;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 1.2s infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Progress bar */
+  .progress-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 700px;
+    padding: 0 24px;
+    margin-bottom: 4px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--crimson), var(--gold));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Restart */
+  .restart-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 0 44px;
+    padding: 9px 18px;
+    border-radius: 24px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    animation: fadeUp 0.4s ease 0.3s both;
+  }
+
+  .restart-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Footer badge */
+  .footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 14px 24px;
+    background: linear-gradient(to top, rgba(26,10,10,0.98), transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .footer-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    backdrop-filter: blur(10px);
+  }
+
+  .footer-badge span {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .footer-badge strong {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* Divider */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 2px 44px;
+    opacity: 0.4;
+  }
+
+  .section-divider span {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .section-divider::before, .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .section-divider::before { max-width: 0; }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: scale(0.88) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+    40% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Info pill */
+  .info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: rgba(212,168,67,0.12);
+    border: 1px solid rgba(212,168,67,0.25);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: var(--gold);
+    margin: 0 0 6px 44px;
+    letter-spacing: 0.03em;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  /* Clinic list */
+  .clinic-list {
+    margin: 6px 0 0 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeUp 0.4s ease 0.15s both;
+  }
+
+  .clinic-item {
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid var(--crimson);
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: var(--cream);
+    line-height: 1.5;
+  }
+
+  .clinic-item strong {
+    display: block;
+    color: white;
+    font-size: 0.87rem;
+  }
+
+  .clinic-item span {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.25rem; }
+    .bubble { max-width: 90%; }
+    .opt-btn { font-size: 0.82rem; padding: 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-ring">🎗️</div>
+    <h1>CRC Awareness<br><span>Nepal Initiative</span></h1>
+  </div>
+  <div class="header-sub">Colorectal Cancer Prevention · ACG SCOPY Initiative 2026</div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('both')" id="btn-both">EN + नेपाली</button>
+    <button class="lang-btn" onclick="setLang('en')" id="btn-en">English Only</button>
+    <button class="lang-btn" onclick="setLang('np')" id="btn-np">नेपाली मात्र</button>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-label" id="progressLabel">Start Assessment</div>
+</div>
+
+<!-- Chat -->
+<div class="chat-wrap">
+  <div class="messages" id="messages"></div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-badge">
+    <span>🏥</span>
+    <span>Powered by <strong>ACG SCOPY Initiative</strong> · Free Public Health Tool</span>
+  </div>
+</div>
+
+<script>
+  let lang = 'both';
+  let step = 0;
+  let score = 0;
+  let answers = {};
+
+  function setLang(l) {
+    lang = l;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + l).classList.add('active');
+  }
+
+  function txt(en, np) {
+    if (lang === 'en') return en;
+    if (lang === 'np') return `<span class="nepali" style="border:none;margin:0;padding:0;color:var(--cream);opacity:1">${np}</span>`;
+    return en + `<span class="nepali">${np}</span>`;
+  }
+
+  // Conversation flow
+  const flow = [
+    {
+      type: 'bot',
+      en: "Hello! I'm your Colorectal Cancer (CRC) Awareness Guide. 👋\n\nThis short assessment will help you understand your risk for colorectal cancer and guide you toward the right steps.\n\nThis takes about 2 minutes and is completely private.",
+      np: "नमस्ते! म तपाईंको कोलोरेक्टल क्यान्सर (CRC) जागरूकता सहायक हुँ। 👋\n\nयो छोटो मूल्यांकनले तपाईंलाई आफ्नो जोखिम बुझ्न र सही कदम चाल्न मद्दत गर्नेछ।\n\nयो लगभग २ मिनेट लाग्छ र पूर्णतः निजी छ।",
+      options: [
+        { en: "Let's start →", np: "सुरु गरौं →", next: 1 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "First — how old are you?",
+      np: "पहिले — तपाईंको उमेर कति छ?",
+      progress: 10,
+      progressLabel: "Step 1 of 7",
+      options: [
+        { en: "Under 30", np: "३० भन्दा कम", score: 0, next: 2 },
+        { en: "30–44", np: "३०–४४", score: 0, next: 2 },
+        { en: "45–59", np: "४५–५९", score: 2, next: 2 },
+        { en: "60 or older", np: "६० वा माथि", score: 3, next: 2 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "Has anyone in your immediate family (parent, sibling, child) ever been diagnosed with colorectal cancer or colon polyps?",
+      np: "के तपाईंको नजिकको परिवार (बुबा/आमा, दाजुभाइ/दिदीबहिनी) लाई कहिल्यै कोलोरेक्टल क्यान्सर वा कोलोन पोलिप भएको छ?",
+      progress: 25,
+      progressLabel: "Step 2 of 7",
+      options: [
+        { en: "Yes", np: "हो", score: 3, next: 3 },
+        { en: "No", np: "छैन", score: 0, next: 3 },
+        { en: "Not sure", np: "थाहा छैन", score: 1, next: 3 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "Have you noticed any blood in your stool, or dark/tarry stools?",
+      np: "के तपाईंले आफ्नो दिसामा रगत देख्नुभएको छ, वा दिसा कालो/लसलसे भएको महसुस गर्नुभएको छ?",
+      progress: 40,
+      progressLabel: "Step 3 of 7",
+      options: [
+        { en: "Yes, recently", np: "हो, हालसालै", score: 4, next: 4 },
+        { en: "Yes, a while ago", np: "हो, केही समय पहिले", score: 2, next: 4 },
+        { en: "No", np: "छैन", score: 0, next: 4 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "Have you experienced any of these symptoms recently?\n• Persistent change in bowel habits\n• Unexplained weight loss\n• Abdominal cramping or pain",
+      np: "के तपाईंले हालसालै यी लक्षणहरू महसुस गर्नुभएको छ?\n• दिसाको बानीमा लगातार परिवर्तन\n• अकारण तौल घट्नु\n• पेटमा मरोड वा दुखाइ",
+      progress: 55,
+      progressLabel: "Step 4 of 7",
+      options: [
+        { en: "Yes, 2 or more", np: "हो, २ वा बढी", score: 4, next: 5 },
+        { en: "Yes, 1 symptom", np: "हो, १ लक्षण", score: 2, next: 5 },
+        { en: "None of these", np: "यी मध्ये केही छैन", score: 0, next: 5 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "How would you describe your lifestyle?",
+      np: "तपाईंको जीवनशैली कस्तो छ भन्नु हुन्छ?",
+      progress: 70,
+      progressLabel: "Step 5 of 7",
+      options: [
+        { en: "Active & healthy diet", np: "सक्रिय र स्वस्थ खाना", score: 0, next: 6 },
+        { en: "Somewhat active", np: "केही हदसम्म सक्रिय", score: 1, next: 6 },
+        { en: "Sedentary / high-fat diet", np: "कम सक्रिय / बोसोयुक्त खाना", score: 2, next: 6 }
+      ]
+    },
+    {
+      type: 'bot',
+      en: "Have you ever had a colonoscopy or CRC screening test?",
+      np: "के तपाईंले कहिल्यै कोलोनोस्कोपी वा CRC जाँच गर्नुभएको छ?",
+      progress: 85,
+      progressLabel: "Step 6 of 7",
+      options: [
+        { en: "Yes, within 5 years", np: "हो, ५ वर्षभित्र", score: 0, next: 'result' },
+        { en: "Yes, over 5 years ago", np: "हो, ५ वर्षभन्दा पहिले", score: 1, next: 'result' },
+        { en: "Never", np: "कहिल्यै छैन", score: 2, next: 'result' }
+      ]
+    }
+  ];
+
+  function addBotMessage(en, np, delay = 0) {
+    return new Promise(resolve => {
+      // typing
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.innerHTML = `
+        <div class="avatar bot">🎗️</div>
+        <div class="typing-dots">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>`;
+      document.getElementById('messages').appendChild(typing);
+      scrollBottom();
+
+      setTimeout(() => {
+        typing.remove();
+        const msg = document.createElement('div');
+        msg.className = 'msg';
+        const content = lang === 'en' ? en :
+                        lang === 'np' ? `<span style="font-family:'Noto Sans Devanagari',sans-serif;line-height:1.8">${np}</span>` :
+                        en + `<span class="nepali">${np}</span>`;
+        msg.innerHTML = `
+          <div class="avatar bot">🎗️</div>
+          <div class="bubble bot">${content.replace(/\n/g, '<br>')}</div>`;
+        document.getElementById('messages').appendChild(msg);
+        scrollBottom();
+        resolve();
+      }, delay || 900);
+    });
+  }
+
+  function addUserMessage(en, np) {
+    const msg = document.createElement('div');
+    msg.className = 'msg user';
+    const content = lang === 'np' ? np : en;
+    msg.innerHTML = `
+      <div class="avatar user-av">👤</div>
+      <div class="bubble user-b">${content}</div>`;
+    document.getElementById('messages').appendChild(msg);
+    scrollBottom();
+  }
+
+  function addOptions(opts) {
+    const wrap = document.createElement('div');
+    wrap.className = 'options-wrap';
+    wrap.id = 'current-options';
+    opts.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = lang === 'en' ? opt.en : lang === 'np' ? opt.np : `${opt.en} <small style="opacity:0.6;font-family:'Noto Sans Devanagari',sans-serif"> / ${opt.np}</small>`;
+      btn.onclick = () => handleOption(opt);
+      wrap.appendChild(btn);
+    });
+    document.getElementById('messages').appendChild(wrap);
+    scrollBottom();
+  }
+
+  function setProgress(pct, label) {
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = label || '';
+  }
+
+  async function handleOption(opt) {
+    // Remove options
+    const opts = document.getElementById('current-options');
+    if (opts) opts.remove();
+
+    // Add user message
+    addUserMessage(opt.en, opt.np);
+
+    // Add score
+    if (opt.score !== undefined) score += opt.score;
+
+    // Next step
+    if (opt.next === 'result') {
+      setProgress(100, 'Assessment Complete');
+      await showResult();
+    } else {
+      step = opt.next;
+      await runStep(step);
+    }
+  }
+
+  async function runStep(i) {
+    const s = flow[i];
+    if (s.progress) setProgress(s.progress, s.progressLabel);
+    await addBotMessage(s.en, s.np);
+    if (s.options) addOptions(s.options);
+  }
+
+  async function showResult() {
+    await addBotMessage(
+      "Thank you for completing the assessment! Let me review your responses...",
+      "मूल्यांकन पूरा गर्नुभएकोमा धन्यवाद! म तपाईंको जवाफहरू समीक्षा गर्दैछु..."
+    );
+
+    const card = document.createElement('div');
+
+    if (score <= 3) {
+      card.className = 'result-card low';
+      card.innerHTML = `
+        <div class="risk-label">✅ Lower Risk Profile</div>
+        <p>Based on your answers, you appear to have a <strong>lower risk</strong> for colorectal cancer right now. However, CRC screening is recommended for everyone aged 45+. Maintain a healthy lifestyle — eat fiber-rich foods, stay active, and avoid smoking.</p>
+        <div class="nepali-result">तपाईंको जवाफका आधारमा, तपाईंलाई अहिले कोलोरेक्टल क्यान्सरको <strong>कम जोखिम</strong> देखिन्छ। तर ४५ वर्ष माथिका सबैलाई CRC जाँच गराउन सिफारिस गरिन्छ। स्वस्थ जीवनशैली अपनाउनुहोस्।</div>`;
+    } else if (score <= 7) {
+      card.className = 'result-card medium';
+      card.innerHTML = `
+        <div class="risk-label">⚠️ Moderate Risk — Action Recommended</div>
+        <p>Your responses suggest a <strong>moderate risk</strong> profile. You should discuss CRC screening with a doctor, especially if you are 45 or older. Early detection saves lives — a colonoscopy can detect and remove polyps before they become cancer.</p>
+        <div class="nepali-result">तपाईंको जवाफले <strong>मध्यम जोखिम</strong> देखाउँछ। तपाईंले डाक्टरसँग CRC जाँचबारे कुरा गर्नुपर्छ, विशेष गरी यदि तपाईं ४५ वर्ष वा माथि हुनुहुन्छ भने। प्रारम्भिक पत्ता लगाउनाले जीवन बचाउँछ।</div>`;
+    } else {
+      card.className = 'result-card high';
+      card.innerHTML = `
+        <div class="risk-label">🔴 Higher Risk — Please See a Doctor Soon</div>
+        <p>Your responses indicate a <strong>higher risk</strong> profile. Please consult a gastroenterologist or your nearest hospital <strong>as soon as possible</strong>. Do not ignore symptoms — early treatment dramatically improves outcomes. You are not alone.</p>
+        <div class="nepali-result">तपाईंको जवाफले <strong>उच्च जोखिम</strong> संकेत गर्दछ। कृपया <strong>जतिसक्दो चाँडो</strong> गाष्ट्रोएन्टेरोलोजिस्ट वा नजिकको अस्पताल जानुहोस्। लक्षणहरूलाई नजरअन्दाज नगर्नुहोस् — प्रारम्भिक उपचारले नतिजा उल्लेखनीय रूपमा सुधार गर्छ।</div>`;
+    }
+
+    document.getElementById('messages').appendChild(card);
+    scrollBottom();
+
+    // Show clinics
+    await new Promise(r => setTimeout(r, 600));
+
+    const pill = document.createElement('div');
+    pill.className = 'info-pill';
+    pill.innerHTML = `🏥 Recommended Health Centers in Nepal`;
+    document.getElementById('messages').appendChild(pill);
+
+    const clinics = document.createElement('div');
+    clinics.className = 'clinic-list';
+    clinics.innerHTML = `
+      <div class="clinic-item">
+        <strong>Bir Hospital — Gastroenterology Dept.</strong>
+        <span>Kanti Path, Kathmandu · 📞 01-4221119</span>
+      </div>
+      <div class="clinic-item">
+        <strong>Tribhuvan University Teaching Hospital</strong>
+        <span>Maharajgunj, Kathmandu · 📞 01-4412404</span>
+      </div>
+      <div class="clinic-item">
+        <strong>B.P. Koirala Memorial Cancer Hospital</strong>
+        <span>Bharatpur, Chitwan · 📞 056-524336</span>
+      </div>
+      <div class="clinic-item">
+        <strong>Patan Hospital — Internal Medicine</strong>
+        <span>Lagankhel, Lalitpur · 📞 01-5522266</span>
+      </div>`;
+    document.getElementById('messages').appendChild(clinics);
+    scrollBottom();
+
+    await new Promise(r => setTimeout(r, 500));
+    await addBotMessage(
+      "Remember: Colorectal cancer is one of the most preventable and treatable cancers when caught early. Sharing this tool with family and friends could save a life. 💙",
+      "याद राख्नुहोस्: कोलोरेक्टल क्यान्सर चाँडो पत्ता लागेमा रोक्न र उपचार गर्न सकिने क्यान्सरहरूमध्ये एक हो। यो उपकरण परिवार र साथीहरूसँग साझा गर्दा जीवन बचाउन सकिन्छ। 💙"
+    );
+
+    // Restart
+    const restart = document.createElement('button');
+    restart.className = 'restart-btn';
+    restart.innerHTML = '↩ Start Over / फेरि सुरु गर्नुहोस्';
+    restart.onclick = resetChat;
+    document.getElementById('messages').appendChild(restart);
+
+    // Share
+    const share = document.createElement('div');
+    share.className = 'options-wrap';
+    share.style.marginTop = '8px';
+    share.innerHTML = `
+      <button class="opt-btn" onclick="navigator.clipboard&&navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied! / लिंक कपी भयो!'))">📋 Copy Link to Share</button>
+      <button class="opt-btn" onclick="window.print()">🖨️ Print / प्रिन्ट</button>`;
+    document.getElementById('messages').appendChild(share);
+    scrollBottom();
+  }
+
+  function resetChat() {
+    step = 0; score = 0; answers = {};
+    document.getElementById('messages').innerHTML = '';
+    setProgress(0, 'Start Assessment');
+    startChat();
+  }
+
+  function scrollBottom() {
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+  }
+
+  async function startChat() {
+    await runStep(0);
+  }
+
+  startChat();
+</script>
+</body>
+</html>
